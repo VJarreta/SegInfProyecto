@@ -1,0 +1,2 @@
+public class Salsa20 {
+}
