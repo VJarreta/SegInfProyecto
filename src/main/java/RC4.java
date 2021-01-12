@@ -46,7 +46,7 @@ public class RC4 {
             byte[] input200k = new byte[reader.available()];
             reader.read(input200k);
 
-            file ="src/main/resources/files/Key256";
+            file ="src/main/resources/files/Key256bits";
             reader = new DataInputStream(new FileInputStream(file));
             byte[] keyBytes = new byte[reader.available()];
             reader.read(keyBytes);
