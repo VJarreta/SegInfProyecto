@@ -1,27 +1,15 @@
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import javax.crypto.Cipher;
-import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.Provider;
 import java.security.Security;
 import java.sql.Timestamp;
-import org.apache.commons.codec.binary.Base64;
-
-
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.engines.RC4Engine;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.jcajce.provider.symmetric.ARC4;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Base64Encoder;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import org.bouncycastle.crypto.engines.RC4Engine;
 
 public class RC4 {
 
@@ -52,22 +40,20 @@ public class RC4 {
             reader.read(keyBytes);
 
             // Define Key + Cipher
-            SecretKeySpec key = new SecretKeySpec(keyBytes, "RC4");
 
-            Cipher cipher = Cipher.getInstance("RC4",BouncyCastleProvider.PROVIDER_NAME);
+            KeyParameter key = new KeyParameter(keyBytes);
+            RC4Engine rc4 = new RC4Engine();
 
             int j = 10;
             while(j>0){
                 byte[] cipherText = new byte[input20k.length];
-                cipher.init(Cipher.ENCRYPT_MODE, key);
-                int ctLength = cipher.update(input20k, 0, input20k.length, cipherText, 0);
-                ctLength += cipher.doFinal(cipherText, ctLength);
+                rc4.init(true, key);
+                rc4.processBytes(input20k, 0, input20k.length, cipherText, 0);
 
                 // decryption pass
-                byte[] plainText = new byte[ctLength];
-                cipher.init(Cipher.DECRYPT_MODE, key);
-                int ptLength = cipher.update(cipherText, 0, ctLength, plainText, 0);
-                ptLength += cipher.doFinal(plainText, ptLength);
+                byte[] plainText = new byte[input20k.length];
+                rc4.init(false, key);
+                rc4.processBytes(cipherText, 0, input20k.length, plainText, 0);
                 j--;
             }
 
@@ -77,19 +63,17 @@ public class RC4 {
                 // encryption pass
 
                 byte[] cipherText = new byte[input20k.length];
-                cipher.init(Cipher.ENCRYPT_MODE, key);
+                rc4.init(true, key);
                 Timestamp t20k1 = new Timestamp(System.nanoTime());
-                int ctLength = cipher.update(input20k, 0, input20k.length, cipherText, 0);
-                ctLength += cipher.doFinal(cipherText, ctLength);
+                rc4.processBytes(input20k, 0, input20k.length, cipherText, 0);
                 Timestamp t20k2 = new Timestamp(System.nanoTime());
 
                 time20k += (t20k2.getTime() - t20k1.getTime())/1000;
 
                 // decryption pass
-                byte[] plainText = new byte[ctLength];
-                cipher.init(Cipher.DECRYPT_MODE, key);
-                int ptLength = cipher.update(cipherText, 0, ctLength, plainText, 0);
-                ptLength += cipher.doFinal(plainText, ptLength);
+                byte[] plainText = new byte[input20k.length];
+                rc4.init(false, key);
+                rc4.processBytes(cipherText, 0, input20k.length, plainText, 0);
 
                 String input = new String(input20k);
                 String output = new String(plainText);
@@ -102,20 +86,18 @@ public class RC4 {
                 // encryption pass
 
                 cipherText = new byte[input100k.length];
-                cipher.init(Cipher.ENCRYPT_MODE, key);
+                rc4.init(true, key);
                 Timestamp t100k1 = new Timestamp(System.nanoTime());
-                ctLength = cipher.update(input100k, 0, input100k.length, cipherText, 0);
-                ctLength += cipher.doFinal(cipherText, ctLength);
+               rc4.processBytes(input100k, 0, input100k.length, cipherText, 0);
                 Timestamp t100k2 = new Timestamp(System.nanoTime());
 
                 time100k += (t100k2.getTime() - t100k1.getTime())/1000;
 
                 // decryption pass
 
-                plainText = new byte[ctLength];
-                cipher.init(Cipher.DECRYPT_MODE, key);
-                ptLength = cipher.update(cipherText, 0, ctLength, plainText, 0);
-                ptLength += cipher.doFinal(plainText, ptLength);
+                plainText = new byte[input100k.length];
+                rc4.init(false, key);
+                rc4.processBytes(cipherText, 0, input100k.length, plainText, 0);
                 input = new String(input100k);
                 output = new String(plainText);
 
@@ -128,10 +110,9 @@ public class RC4 {
                 // encryption pass
 
                 cipherText = new byte[input200k.length];
-                cipher.init(Cipher.ENCRYPT_MODE, key);
+                rc4.init(true, key);
                 Timestamp t200k1 = new Timestamp(System.nanoTime());
-                ctLength = cipher.update(input200k, 0, input200k.length, cipherText, 0);
-                ctLength += cipher.doFinal(cipherText, ctLength);
+                rc4.processBytes(input200k, 0, input200k.length, cipherText, 0);
                 Timestamp t200k2 = new Timestamp(System.nanoTime());
 
 
@@ -139,10 +120,9 @@ public class RC4 {
 
                 // decryption pass
 
-                plainText = new byte[ctLength];
-                cipher.init(Cipher.DECRYPT_MODE, key);
-                ptLength = cipher.update(cipherText, 0, ctLength, plainText, 0);
-                ptLength += cipher.doFinal(plainText, ptLength);
+                plainText = new byte[input200k.length];
+                rc4.init(false, key);
+                rc4.processBytes(cipherText, 0, input200k.length, plainText, 0);
                 input = new String(input200k);
                 output = new String(plainText);
 
@@ -153,7 +133,7 @@ public class RC4 {
             time100k /= nTimes;
             time200k /= nTimes;
 
-            System.out.println("Algorithm: " + cipher.getAlgorithm() + ", Provider: " + cipher.getProvider().getName());
+            System.out.println("Algorithm: " + rc4.getAlgorithmName() + ", Provider: BC");
 
             System.out.println("Time with 20k: " + time20k);
             System.out.println("Time with 100k: " + time100k);
