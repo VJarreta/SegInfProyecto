@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class Salsa20 {
     public static void bucle() {
         Double time20k = 0.0, time100k = 0.0, time200k = 0.0;
-        int nTimes = 100;
+        int nTimes = 1000;
         try{
             Security.addProvider(new BouncyCastleProvider());
             String file ="src/main/resources/files/20k";
@@ -58,6 +58,7 @@ public class Salsa20 {
                 j--;
             }
 
+            Timestamp total1 = new Timestamp(System.nanoTime());
             for(int i=0; i<nTimes; i++){
                 //20kB:
 
@@ -131,6 +132,21 @@ public class Salsa20 {
 
                 assertEquals(input, output);
             }
+            Timestamp total2 = new Timestamp(System.nanoTime());
+
+
+            file ="src/main/resources/files/50MB";
+            reader = new DataInputStream(new FileInputStream(file));
+            byte[] input50MB = new byte[reader.available()];
+            reader.read(input50MB);
+
+            byte[] cipherText = new byte[input50MB.length];
+            salsa.init(true, paras);
+            Timestamp bigFile1 = new Timestamp(System.nanoTime());
+            salsa.processBytes(input50MB, 0, input50MB.length, cipherText, 0);
+            Timestamp bigFile2 = new Timestamp(System.nanoTime());
+
+            long bigFileTime = (bigFile2.getTime() - bigFile1.getTime())/1000;
 
             time20k /= nTimes;
             time100k /= nTimes;
@@ -138,10 +154,12 @@ public class Salsa20 {
 
             System.out.println("Algorithm: " + salsa.getAlgorithmName() + ", Provider: BC");
 
-            System.out.println("Time with 20k: " + time20k);
-            System.out.println("Time with 100k: " + time100k);
-            System.out.println("Time with 200k: " + time200k);
-
+            System.out.println("Mean time with 20k: " + time20k + " us");
+            System.out.println("Mean time with 100k: " + time100k + " us");
+            System.out.println("Mean time with 200k: " + time200k + " us");
+            System.out.println("Total time: " + (double)(total2.getTime()-total1.getTime())/1000000000 + " seconds");
+            System.out.println("Number of executions: " + nTimes);
+            System.out.println("50MB File encrypted in: " + bigFileTime + " us");
 
 
         }catch(Exception e){
